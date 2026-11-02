@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel DNA — India Place Explorer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="theme-tropical">
+<script src="js/theme-init.js"></script>
+
+<div id="boot" role="status" aria-label="Loading Travel DNA">
+  <div class="boot-word">Travel DNA</div>
+  <div class="boot-rule"></div>
+  <div class="boot-sub">India, in three moods</div>
+</div>
+
+<script src="js/boot.js"></script>
+<header id="brand">
+  <a class="brand-link" href="./" aria-label="Travel DNA — home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" role="img">
+        <!-- Two strands that read as a helix and as a winding route. -->
+        <path d="M11 3c0 6 10 8 10 13S11 23 11 29" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round"/>
+        <path d="M21 3c0 6-10 8-10 13s10 7 10 13" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" opacity=".45"/>
+        <circle cx="16" cy="9.6" r="1.9" fill="currentColor"/>
+        <circle cx="16" cy="22.4" r="1.9" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="brand-text">
+      <b>Travel DNA</b>
+      <small>India, in three moods</small>
+    </span>
+  </a>
+  <div id="headerWeather" aria-live="polite">
+    <span class="hw-temp" id="hwTemp">—</span>
+    <span class="hw-text">
+      <span class="hw-condition" id="hwCondition"></span>
+      <span class="hw-meta" id="hwMeta"></span>
+    </span>
+  </div>
+</header>
+
+<div class="theme-switcher" aria-label="Choose a destination mood">
+  <div class="theme-label">Choose a destination mood</div>
+  <button type="button" class="theme-btn active" data-theme="tropical"><span class="dot" style="--dot:#73d69a"></span>Kerala</button>
+  <button type="button" class="theme-btn" data-theme="arid"><span class="dot" style="--dot:#ffc064"></span>Jaipur</button>
+  <button type="button" class="theme-btn" data-theme="winter"><span class="dot" style="--dot:#dff6ff"></span>Himachal</button>
+  <div id="themeStatus">Tropical · Kerala</div>
+</div>
+
+<div id="themeStage" aria-hidden="true">
+  <div class="stage-layer stage-tropical">
+    <span class="amb amb-1"></span><span class="amb amb-2"></span><span class="grain"></span>
+  </div>
+  <div class="stage-layer stage-arid">
+    <span class="sun"></span>
+    <span class="dune d1"></span><span class="dune d2"></span><span class="dune d3"></span>
+    <span class="grain"></span>
+  </div>
+  <div class="stage-layer stage-winter">
+    <span class="frost f1"></span><span class="frost f2"></span>
+    <span class="frost f3"></span><span class="frost f4"></span>
+  </div>
+</div>
+
+<div class="top-row">
+<div id="sharedSearchBlock" class="controls-block">
+        <h1>Explore a place</h1>
+        <p class="search-hint">Search any Indian town, city or region. The mood, map, itinerary and outfit suggestions all follow the state it resolves to.</p>
+        <form id="sharedSearchForm" class="search-form">
+            <div class="search-input-wrap">
+                <input type="text" id="sharedLocationInput" class="search-input" placeholder="e.g. Kutch, Hampi" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="sharedSearchSuggest">
+                <ul id="sharedSearchSuggest" class="search-suggest" role="listbox" hidden></ul>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+        <div class="souvenir-box" id="souvenirBox">
+            <div class="souvenir-head">
+                <b><span aria-hidden="true">🎁</span>Souvenirs of the region</b>
+                <span class="souvenir-state" id="souvenirState"></span>
+            </div>
+            <div id="souvenirBody">
+                <div class="souvenir-empty">Search a destination to see what this state is known for — crafts, textiles and edible take-homes.</div>
+            </div>
+        </div>
+        <div id="instanceRow">
+            <label for="instanceSelect">Search backend</label>
+            <select id="instanceSelect"></select>
+            <input type="text" id="customInstanceInput" placeholder="4get:https://4get.ca  ·  degoog:https://…  ·  https://your-searxng.example" autocomplete="off" hidden>
+        </div>
+    </div>
+
+<div class="tune-box outfit-preferences" id="outfitPreferencesBox">
+  <div class="tune-head">
+    <b>What are you visiting?</b>
+  </div>
+
+  <div class="pref-panel active" id="prefOptions" data-pref-panel="options" role="tabpanel">
+    <div class="pref-label" id="placeTypeLabel">Choose a place type</div>
+    <div class="pref-options place-type-options" id="placeTypeOptions">
+      <div class="pref-empty">Search a destination to see the best-matching experiences.</div>
+    </div>
+    <div id="placeTypeGuidance" class="place-type-guidance" aria-live="polite"></div>
+  </div>
+
+</div>
+</div>
+</div>
+</div>
+
+<div id="startMode" class="controls-block start-mode">
+    <p class="start-mode-text">👋 Search a place above to get started — outfits, the state map, an editable itinerary, and photos &amp; reels all follow once you do.</p>
+</div>
+
+<div id="mainContent" hidden>
+<div id="tabBar">
+        <button type="button" id="tabBtnMap" class="active">State Map</button>
+        <button type="button" id="tabBtnItinerary">Itinerary</button>
+        <button type="button" id="tabBtnOutfits">Outfits</button>
+        <button type="button" id="tabBtnMedia">Place Media</button>
+        <button type="button" id="tabBtnTop" class="tab-action" aria-label="Back to top" title="Back to top">↑</button>
+    </div>
+
+    <!-- ================= State Map panel ================= -->
+    <div id="map-panel" class="tab-panel">
+        <div id="mapCard">
+            <div id="mapWrap">
+                <div id="map"></div>
+            </div>
+            <div id="mapCardInfo">
+                <h2 id="mapCardTitle">&nbsp;</h2>
+                <p id="mapCardSubtitle">Enter a location above</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Itinerary panel =================
+         Sample data, real editing. The plan is seeded from the
+         active mood, then everything is editable and kept per
+         place in localStorage. -->
+    <div id="itinerary-panel" class="tab-panel">
+        <div class="itin-row">
+            <aside class="itin-info-bubbles" aria-label="Trip info">
+                <div class="bubbles-head">Trip info</div>
+                <a id="bookBtn" class="info-bubble" href="https://www.google.com/search?q=book+tickets+India" target="_blank" rel="noopener">
+                    <span class="info-bubble-icon" aria-hidden="true">🎫</span>
+                    <span class="info-bubble-text">
+                        <span class="info-bubble-label">Book ticket</span>
+                    </span>
+                </a>
+                <a id="trainBtn" class="info-bubble" href="https://www.google.com/search?q=train+tickets+India" target="_blank" rel="noopener">
+                    <span class="info-bubble-icon" aria-hidden="true">🚆</span>
+                    <span class="info-bubble-text">
+                        <span class="info-bubble-label">Search trains</span>
+                    </span>
+                </a>
+                <!-- More bubbles (police helpline, ambulance, etc.) go here later. -->
+                <a class="info-bubble" href="tel:112">
+                    <span class="info-bubble-icon" aria-hidden="true">🚓</span>
+                    <span class="info-bubble-text">
+                        <span class="info-bubble-label">Police</span>
+                        <span class="info-bubble-value">112 · 100</span>
+                    </span>
+                </a>
+            </aside>
+            <div id="itinCard">
+                <div class="itin-head">
+                    <div>
+                        <h2 class="itin-title">Itinerary</h2>
+                        <p class="itin-place" id="itinPlace">Search a place to start a plan</p>
+                    </div>
+                    <button type="button" class="itin-ghost" id="itinReset" hidden>Reset to suggested</button>
+                </div>
+                <div class="itin-days" id="itinDays" role="tablist"></div>
+                <ol class="itin-stops" id="itinStops"></ol>
+                <p class="itin-empty" id="itinEmpty" hidden>No stops yet. Add one to start the day.</p>
+                <div class="itin-foot">
+                    <button type="button" class="itin-btn" id="itinAddStop">Add stop</button>
+                    <button type="button" class="itin-ghost" id="itinAddDay">Add day</button>
+                    <span class="itin-count" id="itinCount"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Outfits + Media grid ================= -->
+    <div class="outfit-media-layout">
+    <div id="sectionsLoadingOverlay" class="sections-loading" hidden aria-live="polite">
+        <div class="sections-loading-spinner" aria-hidden="true"></div>
+        <p>Loading outfits, shorts, images &amp; reels…</p>
+    </div>
+    <!-- ================= Outfits panel ================= -->
+    <div id="outfits-panel" class="tab-panel">
+        <div class="results-grid outfits-results">
+            <section class="outfit-main-section">
+                <div class="outfit-section-head">
+                    <div>
+                        <h2>Outfits</h2>
+                    </div>
+                </div>
+                <div class="clothing-buy-head">
+                    <div>
+                        <strong id="clothingBuyHeading">Clothing to buy</strong>
+                        <span>Choose the version you want to shop for:</span>
+                    </div>
+                    <div class="outfit-gender-tabs" role="tablist" aria-label="Clothing to buy gender">
+                        <button type="button" class="outfit-gender-tab active" data-gender="men" role="tab" aria-selected="true">Male</button>
+                        <button type="button" class="outfit-gender-tab" data-gender="women" role="tab" aria-selected="false">Female</button>
+                    </div>
+                </div>
+                <div id="outfitsStatus" class="status-msg"></div>
+                <div id="outfitsGrid" class="grid"></div>
+                <div id="amazonSecondary" class="amazon-secondary" hidden>
+                    <span>Prefer shopping directly?</span>
+                    <a id="amazonSearchLink" href="#" target="_blank" rel="noopener">🛒 Search Amazon</a>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ================= Place Media panel ================= -->
+    <div id="media-panel" class="tab-panel">
+        <div class="results-grid media-results">
+            <section>
+                <h2>YouTube Shorts</h2>
+                <div id="shortsStatus" class="status-msg"></div>
+                <div id="shortsGrid" class="grid"></div>
+            </section>
+            <section>
+                <h2>Images</h2>
+                <div id="imagesStatus" class="status-msg">Enter a location above</div>
+                <div id="imagesGrid" class="grid"></div>
+            </section>
+            <section>
+                <h2>Various</h2>
+                <div id="reelsStatus" class="status-msg"></div>
+                <div id="reelsGrid" class="grid"></div>
+            </section>
+        </div>
+    </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/app.js"></script>
+<!-- ---------- Camera snapshot ---------- -->
+<button type="button" id="travelDnaCameraButton" aria-label="Open camera" title="Take a snapshot">📷</button>
+
+<div id="travelDnaCamera" role="dialog" aria-modal="true" aria-label="Camera snapshot">
+  <div class="cam-shell">
+    <div class="cam-head">
+      <strong>Snapshot</strong>
+      <button type="button" id="travelDnaCameraClose" aria-label="Close camera">×</button>
+    </div>
+    <div class="cam-stage" id="camStage">
+      <video id="camVideo" playsinline muted autoplay></video>
+      <canvas id="camCanvas"></canvas>
+    </div>
+    <p class="cam-note" id="camNote">Starting camera…</p>
+    <div class="cam-actions">
+      <button type="button" class="primary" id="camShoot" disabled>Capture</button>
+      <button type="button" id="camFlip" hidden>Flip</button>
+      <button type="button" id="camRetake" hidden>Retake</button>
+      <button type="button" id="camSave" hidden>Save</button>
+      <label for="travelDnaCameraFile" id="camUploadLabel" hidden>Use device camera</label>
+    </div>
+    <input type="file" id="travelDnaCameraFile" accept="image/*" capture="environment">
+  </div>
+</div>
+
+<script src="js/camera.js"></script>
+
+<!-- ---------- Travel DNA chatbot (add-on only) ---------- -->
+<button type="button" id="travelDnaChatButton" aria-label="Open Travel DNA Assistant" title="Travel DNA Assistant">💬</button>
+
+<div id="travelDnaChat" aria-label="Travel DNA Assistant">
+  <div class="travel-dna-chat-head">
+    <div class="travel-dna-chat-title">
+      <div class="travel-dna-chat-avatar">🧭</div>
+      <div>
+        <strong>Travel DNA Assistant</strong>
+        <small>Your India travel companion</small>
+      </div>
+    </div>
+    <button type="button" id="travelDnaChatClose" aria-label="Close chatbot">×</button>
+  </div>
+
+  <div id="travelDnaChatMessages">
+    <div class="travel-dna-msg bot">👋 Hi! I'm your Travel DNA assistant. Ask me about places, food, outfits, climate, culture, budgets, or itineraries.</div>
+  </div>
+
+  <div class="travel-dna-quick">
+    <button type="button" data-chat="Plan my trip">🗓️ Plan my trip</button>
+    <button type="button" data-chat="What should I wear?">👗 Outfits</button>
+    <button type="button" data-chat="What local food should I try?">🍛 Local food</button>
+    <button type="button" data-chat="What places should I visit?">📍 Places</button>
+  </div>
+
+  <form class="travel-dna-chat-form" id="travelDnaChatForm">
+    <input id="travelDnaChatInput" type="text" placeholder="Ask about your destination..." autocomplete="off">
+    <button id="travelDnaChatSend" type="submit" aria-label="Send">➤</button>
+  </form>
+</div>
+
+<script type="module" src="js/chatbot.js"></script>
+</body>
+</html>

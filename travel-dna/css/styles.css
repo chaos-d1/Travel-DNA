@@ -1,0 +1,1688 @@
+:root {
+        --bg: #f6f4ef;
+        --card-bg: #fffdf9;
+        --ink: #22201c;
+        --muted: #55503f;
+        --accent: #c1440e;
+        --border: #e4ddd0;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* ---------- Start mode ---------- */
+    /* A one-time "here's what to do" banner shown until the first place is
+       searched — dismissed for good once it is (see dismissStartMode). */
+    .start-mode {
+        max-width: 1000px;
+        text-align: center;
+    }
+    .start-mode-text {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.55;
+        color: var(--ink);
+    }
+    @media (max-width: 640px) {
+        .start-mode-text { font-size: 16px; }
+    }
+
+    /* #mainContent has no layout rule of its own, so — being a plain
+       block element — it left zero space between its stacked children
+       (tab bar, map/itinerary/outfits/media sections all butted up
+       against each other with 0px gap). Giving it the same flex-column
+       rhythm as the rest of the page restores consistent spacing
+       everywhere, including between the sticky tab bar and whatever
+       section sits directly beneath it. */
+    #mainContent {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+    }
+
+    /* ---------- Tab switcher ---------- */
+    #tabBar {
+        display: flex;
+        gap: 8px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 14px;
+        z-index: 40;
+        /* #tabBar is a plain block-level flex container, so left to its
+           default width:auto it stretches to fill #mainContent's width
+           (matching the wider panels below) instead of hugging its
+           buttons. Shrink-wrap it and re-center it explicitly. */
+        width: fit-content;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    #tabBar button {
+        border: none;
+        background: transparent;
+        padding: 10px 20px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    #tabBar button.active {
+        background: var(--accent);
+        color: #fff;
+    }
+    #tabBar button:not(.active):hover {
+        background: rgba(127, 127, 127, 0.14);
+        color: var(--ink);
+    }
+    /* An action, not a section — narrower and visually separated so it
+       doesn't look like a fifth thing to switch between. Fixed square
+       dimensions (rather than padding around the glyph) keep it from
+       stretching wide when the arrow character renders with unexpected
+       metrics in a given font. */
+    #tabBar button.tab-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 38px;
+        height: 38px;
+        margin-left: 4px;
+        padding: 0;
+        font-size: 15px;
+        line-height: 1;
+        border-left: 1px solid var(--border);
+        border-radius: 50%;
+    }
+    .tab-panel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 28px; }
+    .tab-panel[hidden] { display: none !important; }
+
+    /* ---------- Shared control styles ---------- */
+    .controls-block {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .controls-block h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--muted);
+    }
+    .search-form {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .search-input-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+    }
+    .search-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 15px;
+        background: var(--card-bg);
+        color: var(--ink);
+    }
+    .search-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    /* Lightweight, client-side match list — no network round trip per
+       keystroke, just a filter over a short curated place list. */
+    .search-suggest {
+        position: absolute;
+        z-index: 20;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 260px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--card-bg);
+        box-shadow: 0 14px 34px rgba(0,0,0,0.16);
+    }
+    .search-suggest[hidden] { display: none; }
+    .search-suggest li {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--ink);
+        cursor: pointer;
+    }
+    .search-suggest li .suggest-kind {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+    }
+    .search-suggest li:hover,
+    .search-suggest li.active {
+        background: rgba(127, 127, 127, 0.14);
+    }
+    .search-suggest li mark {
+        background: none;
+        color: var(--accent);
+        font-weight: 700;
+    }
+    .search-form button {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .search-form button:hover { opacity: 0.9; }
+
+    /* ---------- Place Media panel ---------- */
+    #sharedSearchBlock { max-width: 1280px; }
+    #sharedSearchBlock .search-form { max-width: 480px; }
+
+    #instanceRow {
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--muted);
+    }
+    #instanceSelect, #customInstanceInput {
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+        background: var(--card-bg);
+        color: var(--ink);
+    }
+    #instanceSelect { flex: 1; min-width: 0; }
+    #customInstanceInput { flex-basis: 100%; }
+    #instanceSelect:focus, #customInstanceInput:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    /* Sections sit two across and fill in reading order, so they pair up
+       left/right: Images | Shorts on the first row, Reels | Outfits on the
+       second. `align-items: start` keeps a short section from stretching
+       to match the tall one beside it. */
+    .results-grid {
+        width: 100%;
+        max-width: 1280px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 32px 28px;
+    }
+
+    /* Four content sections: Outfits | YouTube Shorts / Images | Various */
+    .outfit-media-layout {
+        position: relative;
+        width: 100%;
+        max-width: 1280px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 32px 28px;
+    }
+    /* While loading, the four sections stream results in independently —
+       one grid can already be populating cards while the others are still
+       waiting. Capping each SECTION's own height (not the outer
+       container's) stops that growth outright, while leaving the
+       container itself free of overflow:hidden — that matters because
+       the overlay below needs to extend past the container's edges, and
+       clipping the container would've clipped the overlay's edges too. */
+    .outfit-media-layout.is-loading {
+        min-height: 420px;
+    }
+    .outfit-media-layout.is-loading .outfit-main-section,
+    .outfit-media-layout.is-loading #media-panel > .results-grid > section {
+        max-height: 0;
+        overflow: hidden;
+    }
+    /* One shared loading state for Outfits through the media grids, instead
+       of four separate "Loading…" lines appearing across the section.
+       inset extends slightly past the container's own edges so the
+       rounded corners fully cover it — flush inset:0 left a sliver of
+       the (square-cornered) container visible right at each curve. */
+    .sections-loading {
+        position: absolute;
+        inset: -8px;
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: rgba(8, 12, 11, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: var(--tune-radius);
+        color: #fff;
+        text-align: center;
+        padding: 20px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .sections-loading.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .sections-loading[hidden] { display: none; }
+    .sections-loading p {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .sections-loading-spinner {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.25);
+        border-top-color: #fff;
+        animation: sectionsSpin 0.8s linear infinite;
+    }
+    @keyframes sectionsSpin { to { transform: rotate(360deg); } }
+    .outfit-media-layout > #outfits-panel,
+    .outfit-media-layout > #media-panel {
+        width: 100%;
+        min-width: 0;
+    }
+    .outfit-media-layout > #outfits-panel {
+        display: contents;
+    }
+    .outfit-media-layout > #media-panel {
+        display: contents;
+    }
+    .outfit-media-layout > #outfits-panel > .results-grid,
+    .outfit-media-layout > #media-panel > .results-grid {
+        display: contents;
+    }
+    .outfit-media-layout .outfit-main-section,
+    .outfit-media-layout #media-panel > .results-grid > section {
+        width: 100%;
+        min-width: 0;
+        align-self: start;
+    }
+    .outfit-media-layout .outfit-main-section {
+        grid-column: 1 / -1;
+    }
+
+    /* One column is the only sane layout once a section is narrower than
+       about two cards. */
+    @media (max-width: 900px) {
+        .results-grid, .outfit-media-layout { grid-template-columns: minmax(0, 1fr); }
+    }
+    section h2 {
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 0 0 12px;
+    }
+    .grid {
+        display: grid;
+        /* Halved column width means the old 260px minimum would force a
+           single card per row on a 1280px page. */
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 12px;
+    }
+    /* Outfits now spans the full page width (both left and right of the
+       media grid below it), so it gets a fixed 4-across layout instead
+       of the auto-fill used by the narrower Shorts/Images/Reels grids. */
+    #outfitsGrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    @media (max-width: 900px) {
+        #outfitsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 520px) {
+        #outfitsGrid { grid-template-columns: minmax(0, 1fr); }
+    }
+    .show-more {
+        margin-top: 12px;
+        width: 100%;
+        padding: 9px 14px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        color: var(--ink);
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .show-more:hover { background: rgba(127, 127, 127, 0.12); border-color: var(--ink); }
+    .status-msg {
+        font-size: 14px;
+        color: var(--muted);
+        padding: 8px 2px;
+    }
+    .status-msg.error { color: #b3261e; }
+
+    .card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--card-bg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+    }
+    .card .thumb {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        display: block;
+        background: var(--border);
+        border: 0;
+    }
+    .card.video .thumb { aspect-ratio: 9 / 16; }
+    .card .caption {
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.35;
+        color: var(--ink);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .card.link-only {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        aspect-ratio: auto;
+    }
+    .card.link-only .icon {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .card.link-only .caption { padding: 0; -webkit-line-clamp: 3; }
+
+    /* ---------- Outfits ---------- */
+
+    /* The price has to sit on the image rather than under it, because a
+       store card with no price still has to line up in the same grid as
+       one that has a price. Overlaying keeps every card the same height. */
+    .card .shot { position: relative; display: block; }
+    .card.outfit .thumb { aspect-ratio: 3 / 4; }
+    .card .price-tag,
+    .card .src-tag {
+        position: absolute;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        padding: 5px 8px;
+        border-radius: 999px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    .card .price-tag {
+        left: 8px;
+        bottom: 8px;
+        background: rgba(12, 12, 12, 0.72);
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.2px;
+    }
+    .card .src-tag {
+        right: 8px;
+        top: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        color: #22201c;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-size: 9px;
+    }
+
+    /* ---------- Outfit preferences ---------- */
+    .outfit-preferences { min-width: 320px; }
+    .pref-panel { display: none; }
+    .pref-panel.active { display: block; }
+    #prefOptions { display: block; }
+    .pref-label {
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+    .pref-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .gender-options { grid-template-columns: repeat(3, 1fr); }
+    .outfit-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+    .clothing-buy-head {
+      display:flex; align-items:center; justify-content:space-between; gap:18px;
+      margin: 8px 0 12px; padding: 12px 14px;
+      border:1px solid rgba(255,255,255,.12); border-radius:14px;
+      background:rgba(255,255,255,.055); backdrop-filter:blur(8px);
+    }
+    .clothing-buy-head strong { display:block; font-size:14px; }
+    .clothing-buy-head span { display:block; margin-top:3px; font-size:11px; opacity:.68; }
+    @media (max-width: 720px) {
+      .clothing-buy-head { flex-direction:column; align-items:flex-start; }
+    }
+
+    .outfit-gender-tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 3px;
+        margin-top: 7px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(127,127,127,0.08);
+    }
+    .outfit-gender-tab {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 7px 14px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .outfit-gender-tab.active {
+        background: var(--accent);
+        color: #fff;
+    }
+    .outfits-results { width: 100%; max-width: 1280px; }
+    .outfit-main-section { width: 100%; }
+    .place-type-options {
+        grid-template-columns: 1fr;
+        /* Roughly 3 rows — past that the list starts crowding the box,
+           so it scrolls instead of pushing everything else down. Single
+           column means a partial row at the fold is just one item, the
+           normal "there's more below" scroll cue, not a layout glitch. */
+        max-height: 176px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+    .place-type-options .pref-option { text-align: left; line-height: 1.25; }
+    .pref-empty {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 12px 10px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        grid-column: 1 / -1;
+    }
+    .pref-empty::before {
+        content: '🧭';
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+
+    /* ---------- Souvenirs of the region (inside "Explore a place") ---------- */
+    .souvenir-box{
+        margin-top:16px;padding-top:14px;
+        border-top:1px solid var(--border);
+        display:flex;flex-direction:column;gap:11px;
+    }
+    .souvenir-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .souvenir-head b{
+        display:flex;align-items:center;gap:7px;
+        font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.01em;
+    }
+    .souvenir-state{
+        font-size:10.5px;font-weight:600;color:var(--muted);
+        padding:3px 9px;border-radius:999px;
+        border:1px solid var(--border);background:rgba(127,127,127,.08);
+        white-space:nowrap;
+    }
+    .souvenir-state:empty{display:none}
+    .souvenir-list{
+        display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+        max-height:230px;overflow-y:auto;padding:1px 4px 1px 1px;margin:0;list-style:none;
+        scrollbar-width:thin;
+    }
+    @media(max-width:520px){.souvenir-list{grid-template-columns:1fr;max-height:260px}}
+    .souvenir-item{
+        position:relative;
+        overflow:hidden;
+        display:flex;align-items:center;gap:10px;
+        border:1px solid var(--border);border-radius:14px;
+        padding:10px 22px 10px 10px;background:var(--card-bg);
+        color:inherit;text-decoration:none;
+        transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    /* Tourist/product background photo for a souvenir card, faded in once
+       it loads — same system as the itinerary stop photos. A gradient
+       darkens it so the icon and text on top stay legible either way. */
+    .souvenir-photo{
+        position:absolute;inset:0;z-index:0;
+        background-size:cover;background-position:center;
+        opacity:0;transition:opacity .4s ease;
+    }
+    .souvenir-photo.is-loaded{opacity:1}
+    .souvenir-photo::after{
+        content:'';position:absolute;inset:0;
+        background:linear-gradient(100deg,rgba(10,12,10,.6) 0%,rgba(10,12,10,.42) 45%,rgba(10,12,10,.68) 100%);
+    }
+    .souvenir-icon,.souvenir-text,.souvenir-item::after{position:relative;z-index:1}
+    .souvenir-item::after{
+        content:'↗';position:absolute;top:9px;right:9px;
+        font-size:10px;color:var(--muted);opacity:0;transition:opacity .16s ease;
+    }
+    .souvenir-item:hover{
+        border-color:var(--accent);
+        box-shadow:0 4px 14px rgba(0,0,0,.07);
+        transform:translateY(-1px);
+    }
+    .souvenir-item:hover::after{opacity:.8}
+    .souvenir-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .souvenir-item.has-photo{border-color:rgba(255,255,255,.22)}
+    .souvenir-item.has-photo .souvenir-name{color:#fff}
+    .souvenir-item.has-photo .souvenir-note{color:rgba(255,255,255,.82)}
+    .souvenir-item.has-photo .souvenir-icon{background:rgba(255,255,255,.2);color:#fff}
+    .souvenir-item.has-photo::after{color:rgba(255,255,255,.85)}
+    .souvenir-icon{
+        flex-shrink:0;width:32px;height:32px;display:grid;place-items:center;
+        font-size:16px;border-radius:10px;background:rgba(127,127,127,.12);
+        transition:background .25s ease,color .25s ease;
+    }
+    .souvenir-text{min-width:0;display:flex;flex-direction:column;gap:3px}
+    .souvenir-name{font-size:12px;font-weight:700;color:var(--ink);line-height:1.25;transition:color .25s ease}
+    .souvenir-note{
+        font-size:10.5px;color:var(--muted);line-height:1.4;transition:color .25s ease;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    }
+    .souvenir-foot{
+        display:flex;gap:8px;align-items:flex-start;
+        font-size:10.5px;color:var(--muted);line-height:1.5;
+        padding:9px 11px;border-radius:12px;
+        background:rgba(127,127,127,.07);
+        border-left:2px solid var(--accent);
+    }
+    .souvenir-empty{
+        display:flex;align-items:center;gap:10px;color:var(--muted);
+        font-size:11.5px;line-height:1.45;padding:14px 12px;
+        border:1px dashed var(--border);border-radius:14px;
+    }
+    .souvenir-empty::before{content:'🎁';font-size:18px;flex-shrink:0}
+
+
+    .place-type-guidance {
+        margin-top: 10px;
+        padding: 10px 11px;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--ink);
+        background: rgba(127, 127, 127, 0.08);
+        border-left: 2px solid var(--accent);
+        border-radius: 0 10px 10px 0;
+    }
+    .reel-poster {
+        aspect-ratio: 9 / 16;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--border) 60%, transparent);
+        color: var(--muted);
+    }
+    .pref-option {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 9px 30px 9px 9px;
+        background: rgba(255,255,255,0.28);
+        color: var(--ink);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.18s ease;
+    }
+    .pref-option-icon {
+        flex-shrink: 0;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        border-radius: 9px;
+        background: rgba(127, 127, 127, 0.12);
+        transition: background 0.18s ease;
+    }
+    .pref-option-label {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .pref-option-check {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 16px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        line-height: 1;
+        color: #fff;
+        background: var(--accent);
+        border-radius: 50%;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .pref-option:hover {
+        transform: translateY(-1px);
+        background: var(--card-bg);
+        border-color: var(--ink);
+    }
+    .pref-option:hover .pref-option-icon {
+        background: rgba(127, 127, 127, 0.2);
+    }
+    .pref-option.active {
+        transform: translateY(-1px);
+        background: var(--card-bg);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+    }
+    .pref-option.active .pref-option-icon {
+        background: var(--accent);
+    }
+    .pref-option.active .pref-option-check {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .amazon-secondary {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .amazon-secondary a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(127,127,127,0.1);
+        color: var(--ink);
+        text-decoration: none;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .amazon-secondary a:hover { background: rgba(127,127,127,0.18); }
+
+    /* ---------- State Map panel ---------- */
+
+    #mapCard {
+        position: relative;
+        width: 100%;
+        max-width: 1000px;
+        height: 340px;
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+    }
+    #mapWrap {
+        position: absolute;
+        inset: 0;
+        -webkit-mask-image: linear-gradient(to right, #000 0%, #000 84%, transparent 100%);
+                mask-image: linear-gradient(to right, #000 0%, #000 84%, transparent 100%);
+    }
+    #map { width: 100%; height: 100%; background: var(--card-bg); }
+    #map .leaflet-control-attribution { font-size: 9px; }
+    #map .leaflet-interactive { filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
+
+    #mapCardInfo {
+        position: absolute;
+        left: 18px;
+        bottom: 18px;
+        z-index: 2;
+        max-width: min(300px, 50%);
+        padding: 14px 18px;
+        border-radius: 14px;
+        background: rgba(255, 253, 249, 0.9);
+        backdrop-filter: blur(8px) saturate(140%);
+        -webkit-backdrop-filter: blur(8px) saturate(140%);
+        border: 1px solid rgba(255,255,255,0.7);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    }
+    #mapCardInfo h2 {
+        margin: 0 0 2px;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ink);
+        text-transform: none;
+        letter-spacing: normal;
+    }
+    #mapCardInfo p {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+    #mapCardInfo .status {
+        text-transform: none;
+        letter-spacing: normal;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .error { color: #b3261e !important; }
+
+    [hidden] { display: none !important; }
+/* ---------- Travel DNA theme switcher: mapped from the 3 reference UIs ---------- */
+body{transition:background .7s ease,color .4s ease;}
+
+/* Theme-specific typography mapped from the supplied reference HTMLs. */
+body.theme-tropical{--body-font:Inter,system-ui,sans-serif;--heading-font:Inter,system-ui,sans-serif;}
+body.theme-arid{--body-font:Inter,ui-sans-serif,system-ui,sans-serif;--heading-font:Georgia,"Times New Roman",serif;}
+body.theme-winter{--body-font:Inter,system-ui,sans-serif;--heading-font:"Playfair Display",Georgia,serif;}
+body{font-family:var(--body-font);}
+h1,h2,h3,.controls-block h1,#mapCardInfo h2{font-family:var(--heading-font);}
+
+/* Tropical reference — deep monsoon greens + liquid-glass atmosphere */
+body.theme-tropical{
+  --bg:#041712;
+  --card-bg:rgba(12,42,35,.28);
+  --ink:rgba(245,255,251,.96);
+  --muted:rgba(220,240,234,.70);
+  --accent:#0f5b48;
+  --border:rgba(230,255,246,.34);
+  --theme-a:#0d3324;
+  --theme-b:#123c29;
+  --theme-c:#7fdc9c;
+  --theme-ink:rgba(245,255,251,.96);
+  --theme-muted:rgba(220,240,234,.70);
+  background:
+    radial-gradient(circle at 74% 20%,rgba(44,118,91,.22),transparent 32%),
+    radial-gradient(circle at 24% 80%,rgba(25,101,76,.20),transparent 30%),
+    #061a15;
+  color:var(--ink);
+}
+
+/* Arid reference — red clay, burnt orange, glowing sun, dark dunes */
+body.theme-arid{
+  --bg:#3a1723;
+  --card-bg:rgba(255,255,255,.12);
+  --ink:#fff2d6;
+  --muted:rgba(255,242,214,.72);
+  --accent:#ffb36c;
+  --border:rgba(255,240,220,.28);
+  --theme-a:#7e2730;
+  --theme-b:#cf493f;
+  --theme-c:#ffcd79;
+  --theme-ink:#fff2d6;
+  --theme-muted:rgba(255,242,214,.72);
+  background:
+    radial-gradient(ellipse 56% 38% at 72% 84%,rgba(255,178,84,.70) 0%,rgba(238,104,50,.38) 42%,transparent 74%),
+    linear-gradient(180deg,#2a0f1c 0%,#4b1a2a 24%,#8d3239 52%,#bf4733 78%,#d4573c 100%);
+  color:var(--ink);
+}
+
+/* Winter reference — icy blue gradients, mountain geometry and frost */
+body.theme-winter{
+  --bg:#163d5b;
+  --card-bg:rgba(220,244,255,.16);
+  --ink:#fff;
+  --muted:rgba(247,253,255,.82);
+  --accent:#75b9d8;
+  --border:rgba(235,250,255,.42);
+  --theme-a:#163d5b;
+  --theme-b:#7cb7d3;
+  --theme-c:#dff6ff;
+  --theme-ink:#fff;
+  --theme-muted:rgba(247,253,255,.82);
+  background:
+    radial-gradient(circle at 15% 8%,rgba(238,250,255,.90),transparent 20%),
+    radial-gradient(circle at 82% 15%,rgba(246,188,210,.38),transparent 25%),
+    radial-gradient(circle at 50% 80%,rgba(118,188,218,.45),transparent 35%),
+    linear-gradient(135deg,#163d5b 0%,#7cb7d3 48%,#b8d9e7 100%);
+  color:var(--ink);
+}
+
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;
+  transition:background .7s ease,opacity .5s ease;
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  transition:background .7s ease,opacity .5s ease;
+}
+body.theme-tropical::before{
+  background:
+    radial-gradient(circle at 74% 20%,rgba(44,118,91,.22),transparent 32%),
+    radial-gradient(circle at 24% 80%,rgba(25,101,76,.20),transparent 30%);
+}
+body.theme-tropical::after{
+  background:linear-gradient(180deg,rgba(4,20,16,.12),rgba(2,12,10,.48));
+  opacity:.95;
+}
+body.theme-arid::before{
+  background:
+    radial-gradient(circle at 70% 82%,transparent 0 20%,rgba(10,4,12,.10) 52%,rgba(4,2,8,.46) 100%),
+    linear-gradient(to bottom,rgba(5,2,7,.34) 0%,rgba(5,2,7,.02) 42%,rgba(5,2,7,.20) 100%);
+}
+body.theme-arid::after{
+  background-image:
+    radial-gradient(circle at 22% 32%,rgba(255,214,166,.07) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 72% 64%,rgba(255,214,166,.06) 0 1px,transparent 1.5px);
+  background-size:22px 22px,27px 27px;
+  opacity:.45;
+}
+body.theme-winter::before{
+  background:
+    linear-gradient(145deg,transparent 55%,rgba(17,53,76,.25) 55% 63%,transparent 63%),
+    linear-gradient(35deg,transparent 52%,rgba(255,255,255,.15) 52% 59%,transparent 59%),
+    radial-gradient(ellipse at 50% 75%,rgba(27,66,91,.45),transparent 45%);
+  filter:blur(12px);transform:scale(1.08);
+}
+body.theme-winter::after{
+  background:
+    radial-gradient(circle at 30% 40%,transparent 0 14%,rgba(255,255,255,.08) 28%,transparent 48%),
+    linear-gradient(to bottom,rgba(255,255,255,.1),transparent 35%,rgba(6,35,55,.18));
+  backdrop-filter:blur(3px);
+}
+
+/* Map the existing UI surfaces to the active reference palette. */
+.controls-block,
+#tabBar,
+#mapCard,
+.card{
+  transition:background .7s ease,border-color .7s ease,color .4s ease,box-shadow .7s ease;
+}
+.controls-block{
+  padding:22px;border:1px solid var(--border);border-radius:24px;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 18px 50px rgba(0,0,0,.14);
+}
+.controls-block h1{color:var(--ink)}
+.search-input,#instanceSelect,#customInstanceInput{
+  background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--border);
+}
+.search-form button,
+#tabBar button.active{
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+}
+#tabBar{background:rgba(255,255,255,.06);border-color:var(--border);backdrop-filter:blur(14px)}
+#tabBar button{color:var(--muted)}
+#tabBar button:not(.active):hover{background:rgba(255,255,255,.1);color:var(--ink)}
+#mapCard{background:rgba(255,255,255,.08);border-color:var(--border);box-shadow:0 18px 55px rgba(0,0,0,.20)}
+.card{background:var(--card-bg);border-color:var(--border);color:var(--ink)}
+.card .caption{color:var(--ink)}
+section h2,.status-msg,#instanceRow{color:var(--muted)}
+
+.theme-switcher{width:100%;max-width:1280px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:4px}
+.theme-label{width:100%;text-align:center;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:2px}
+.theme-btn{
+  appearance:none;border:1px solid var(--border);background:rgba(255,255,255,.07);color:var(--ink);
+  padding:11px 18px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:transform .18s ease,background .7s ease,border-color .7s ease,box-shadow .7s ease;
+}
+.theme-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.13)}
+.theme-btn.active{color:#fff;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));border-color:rgba(255,255,255,.35);box-shadow:0 10px 26px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.22)}
+.theme-btn .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--dot);box-shadow:0 0 10px var(--dot)}
+#themeStatus{width:100%;text-align:center;color:var(--muted);font-size:12px;margin-top:-2px}
+
+/* ============================================================
+   TUNABLE VARIABLES
+   The four sliders write to these. Every themed surface reads
+   from them, so one slider moves the whole page at once.
+   ============================================================ */
+:root{
+  --tune-blur:22px;   /* backdrop-filter strength on glass    */
+  --tune-glow:1;      /* opacity of the scenery layer         */
+  --tune-radius:24px; /* base corner radius                   */
+  --tune-depth:1;     /* strength of the vignette / haze      */
+}
+
+/* ============================================================
+   SCENERY — the shapes lifted from each reference template.
+   One layer per theme, cross-faded by the body class.
+   ============================================================ */
+#themeStage{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+#themeStage .stage-layer{position:absolute;inset:0;opacity:0;transition:opacity .7s ease}
+body.theme-tropical #themeStage .stage-tropical,
+body.theme-arid     #themeStage .stage-arid,
+body.theme-winter   #themeStage .stage-winter{opacity:var(--tune-glow)}
+
+/* Tropical: blurred ambient orbs + soft-light film grain */
+.amb{position:absolute;border-radius:50%;filter:blur(70px)}
+.amb-1{width:34vw;height:34vw;right:-10vw;top:10vh;background:rgba(61,181,137,.16)}
+.amb-2{width:30vw;height:30vw;left:-8vw;bottom:-6vw;background:rgba(4,126,98,.20)}
+.grain{
+  position:absolute;inset:0;opacity:.06;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+}
+
+/* The theme gradients were sized for a one-screen hero. On a scrolling
+   page they stretch across the whole document height and slide away from
+   the fixed scenery behind them. Pinning them to the viewport keeps the
+   sun in the gradient lined up with the sun in the scenery. */
+body.theme-tropical,
+body.theme-arid,
+body.theme-winter{background-attachment:fixed}
+
+/* Arid: low sun over layered dune crests. The reference file drew its
+   dunes with stacked radial-gradient rings, which only read as dunes
+   because a desert photo sat behind them at 21% opacity. With no photo
+   they smear into arcs, so the crests are drawn here as elliptical
+   silhouettes instead — the same shape the reference used for its
+   smaller .desert-art panel.
+
+   Placement is constrained by the layout: the content column is 1000px
+   wide and centred, so anything between 34% and 66% of the viewport is
+   hidden behind cards. The whole scene therefore sits in the bottom
+   third and to the right of the column, where it is actually visible. */
+.sun{
+  position:absolute;width:min(30vw,380px);aspect-ratio:1;
+  right:3%;bottom:25vh;border-radius:50%;
+  background:radial-gradient(circle,#ffe0a0 0%,#ffab58 30%,rgba(255,132,52,.30) 56%,rgba(255,120,45,.06) 70%,transparent 76%);
+  filter:blur(2px);
+}
+.dune{
+  position:absolute;
+  border-radius:50% 50% 0 0 / 100% 100% 0 0;
+}
+/* Furthest crest is highest and hazier; nearest is lowest and darkest. */
+.d1{left:-22%;width:104%;height:18vh;bottom:11vh;background:#8d3239;opacity:.78}
+.d2{right:-24%;width:100%;height:17vh;bottom:5vh;background:#63212c;opacity:.9}
+.d3{left:-16%;width:132%;height:17vh;bottom:-5vh;background:#2e1220}
+
+/* Winter: frost ferns radiating from the page corners */
+.frost{position:absolute;width:340px;height:340px;opacity:.62;filter:drop-shadow(0 8px 12px rgba(30,85,112,.16))}
+.frost:before,.frost:after{content:"";position:absolute;left:50%;top:50%;border-radius:100%}
+.frost:before{
+  width:6px;height:290px;transform:translate(-50%,-50%);
+  background:linear-gradient(to top,transparent,#e9fbff 30%,rgba(255,255,255,.9));
+}
+.frost:after{
+  width:180px;height:180px;transform:translate(-50%,-50%) rotate(18deg);
+  background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0deg 9deg,rgba(235,251,255,.88) 9deg 11deg,transparent 11deg 22deg);
+  -webkit-mask-image:radial-gradient(circle,black 0 42%,transparent 44%);
+          mask-image:radial-gradient(circle,black 0 42%,transparent 44%);
+}
+.f1{left:-150px;top:-110px;transform:rotate(-20deg) scale(1.25)}
+.f2{right:-150px;top:25px;transform:rotate(35deg) scale(1.1);opacity:.45}
+.f3{left:-100px;bottom:-160px;transform:rotate(20deg) scale(1.35);opacity:.42}
+.f4{right:-120px;bottom:-130px;transform:rotate(-35deg);opacity:.5}
+
+/* The haze / vignette overlay is what the haze slider drives. These need
+   the same specificity as the theme rules above to take effect. */
+body.theme-tropical::after{opacity:calc(.95 * var(--tune-depth))}
+body.theme-arid::after{opacity:calc(.45 * var(--tune-depth))}
+body.theme-winter::after{opacity:var(--tune-depth)}
+
+/* ============================================================
+   SURFACES — each theme borrows its own glass recipe and
+   corner language from the template it came from.
+   ============================================================ */
+.controls-block,#tabBar,#mapCard,.card,.theme-btn,.tune-box,.search-form button,.search-input{
+  border-radius:var(--tune-radius);
+}
+.controls-block{
+  backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  -webkit-backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+}
+#tabBar,.theme-btn,.search-form button,.tune-slider{border-radius:999px}
+#mapCard{border-radius:calc(var(--tune-radius) * 1.15)}
+.card{
+  border-radius:calc(var(--tune-radius) * .6);
+  backdrop-filter:blur(calc(var(--tune-blur) * .5));
+  -webkit-backdrop-filter:blur(calc(var(--tune-blur) * .5));
+}
+.search-input,#instanceSelect,#customInstanceInput{border-radius:calc(var(--tune-radius) * .55)}
+
+/* Tropical glass: layered white sheen over deep green, inner top highlight. */
+body.theme-tropical .controls-block,
+body.theme-tropical .tune-box,
+body.theme-tropical #itinCard,
+body.theme-tropical .itin-info-bubbles,
+body.theme-tropical #mapCard{
+  background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 38%,rgba(3,35,27,.22)),rgba(10,48,40,.19);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.06),0 30px 70px rgba(0,0,0,.2);
+}
+/* Arid glass: warmer, thinner, with the template's long soft shadow. */
+/* Arid glass: the sun sits behind the content column, so this tints
+   toward the dark clay rather than toward white — a white-on-white
+   wash left the lower rows unreadable wherever the glow fell. */
+body.theme-arid .controls-block,
+body.theme-arid .tune-box,
+body.theme-arid #itinCard,
+body.theme-arid .itin-info-bubbles,
+body.theme-arid #mapCard{
+  background:linear-gradient(135deg,rgba(88,32,49,.46),rgba(38,14,26,.42));
+  box-shadow:0 24px 80px rgba(30,5,15,.32),inset 0 1px rgba(255,255,255,.14);
+}
+/* Winter glass: icy tint, brighter stroke, cold shadow. */
+body.theme-winter .controls-block,
+body.theme-winter .tune-box,
+body.theme-winter #itinCard,
+body.theme-winter .itin-info-bubbles,
+body.theme-winter #mapCard{
+  background:linear-gradient(135deg,rgba(238,251,255,.25),rgba(168,216,234,.1));
+  box-shadow:0 24px 70px rgba(5,31,52,.28),inset 0 1px rgba(255,255,255,.4);
+}
+
+/* The map's floating info card was hardcoded cream — pull it onto the theme. */
+#mapCardInfo{
+  border:1px solid var(--border);
+  border-radius:calc(var(--tune-radius) * .6);
+  backdrop-filter:blur(calc(var(--tune-blur) * .7)) saturate(140%);
+  -webkit-backdrop-filter:blur(calc(var(--tune-blur) * .7)) saturate(140%);
+  transition:background .7s ease,border-color .7s ease;
+}
+body.theme-tropical #mapCardInfo{background:rgba(6,32,26,.55)}
+body.theme-arid     #mapCardInfo{background:rgba(52,16,26,.5)}
+body.theme-winter   #mapCardInfo{background:rgba(22,61,91,.45)}
+
+/* The reference templates each round their cards differently. */
+body.theme-tropical{--theme-radius:34px}
+body.theme-arid{--theme-radius:28px}
+body.theme-winter{--theme-radius:26px}
+
+/* ============================================================
+   BRAND
+   ============================================================ */
+#brand{
+  width:100%;max-width:1000px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+
+/* Live current weather for the searched place, top-right of the header.
+   Plain text, no card/border/blur — just a number and two lines. */
+#headerWeather{
+  display:none;align-items:center;gap:10px;
+  text-align:right;line-height:1.25;
+}
+#headerWeather.show{display:flex}
+#headerWeather .hw-temp{
+  font-size:27px;font-weight:600;color:var(--ink);
+  white-space:nowrap;letter-spacing:-.01em;
+}
+#headerWeather .hw-text{display:grid;gap:1px;min-width:0}
+#headerWeather .hw-condition{
+  font-size:11.5px;font-weight:600;color:var(--ink);
+  max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#headerWeather .hw-meta{
+  font-size:10px;color:var(--muted);letter-spacing:.03em;
+  max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+@media(max-width:560px){
+  #headerWeather .hw-temp{font-size:22px}
+  #headerWeather .hw-condition,#headerWeather .hw-meta{max-width:120px}
+}
+.brand-link{
+  display:inline-flex;align-items:center;gap:11px;
+  text-decoration:none;color:var(--ink);
+  padding:4px;border-radius:999px;
+}
+.brand-mark{
+  width:38px;height:38px;flex:none;
+  display:grid;place-items:center;
+  border:1px solid var(--border);border-radius:50%;
+  background:rgba(255,255,255,.07);
+  color:var(--theme-c);
+  backdrop-filter:blur(calc(var(--tune-blur) * .6));
+  -webkit-backdrop-filter:blur(calc(var(--tune-blur) * .6));
+  transition:background .7s ease,border-color .7s ease,color .7s ease;
+}
+.brand-mark svg{width:23px;height:23px;display:block}
+.brand-text{display:grid;line-height:1.2}
+.brand-text b{font-family:var(--heading-font);font-size:16px;font-weight:600;letter-spacing:.02em}
+.brand-text small{font-size:10.5px;color:var(--muted);letter-spacing:.05em}
+.brand-link:hover .brand-mark{background:rgba(255,255,255,.14)}
+.brand-link:focus-visible{outline:2px solid var(--theme-c);outline-offset:2px}
+@media(max-width:560px){ .brand-text small{display:none} }
+
+/* ============================================================
+   ITINERARY ROW — a narrow "quick info" sidebar of round white
+   bubbles (book ticket now, police/emergency numbers etc. later)
+   sitting to the left of the itinerary card.
+   ============================================================ */
+#itinerary-panel{width:100%}
+.itin-row{
+  width:100%;max-width:1000px;margin:0 auto;
+  display:flex;align-items:stretch;gap:16px;
+}
+.itin-info-bubbles{
+  width:206px;flex-shrink:0;
+  display:flex;flex-direction:column;justify-content:center;gap:10px;
+  padding:16px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--tune-radius);
+  backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  -webkit-backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  transition:background .7s ease,border-color .7s ease,box-shadow .7s ease;
+}
+.itin-info-bubbles .bubbles-head{
+  font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;
+}
+/* Each round white bubble: an icon chip plus a label/value pair.
+   #bookBtn reuses this so "Book ticket" is visually one of the set. */
+.info-bubble{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px;border-radius:999px;
+  background:#fff;color:#1a1a1a;text-decoration:none;
+  border:1px solid rgba(255,255,255,.75);
+  box-shadow:0 8px 20px rgba(0,0,0,.16);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+a.info-bubble:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,0,0,.22)}
+.info-bubble:focus-visible{outline:2px solid var(--theme-c);outline-offset:2px}
+.info-bubble-icon{
+  flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;font-size:13px;
+  background:rgba(0,0,0,.06);
+}
+.info-bubble-text{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.info-bubble-label{
+  font-size:12.5px;font-weight:700;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.info-bubble-value{
+  font-size:10.5px;font-weight:600;color:#7a7a7a;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* Placeholder bubble for info that isn't wired up yet (e.g. police /
+   emergency numbers) — visibly "coming soon" rather than a dead link. */
+.info-bubble.is-placeholder{
+  background:rgba(255,255,255,.5);
+  color:#55503f;cursor:default;
+}
+.info-bubble.is-placeholder .info-bubble-icon{background:rgba(0,0,0,.05)}
+@media(max-width:900px){
+  .itin-row{flex-direction:column}
+  .itin-info-bubbles{width:100%;flex-direction:row;flex-wrap:wrap}
+  /* Equal width + centered content so bubbles with different amounts of
+     text (a one-line label vs. a label+value pair) still line up cleanly
+     side by side instead of each sizing to its own content. */
+  .info-bubble{flex:1 1 140px;min-width:0;justify-content:center}
+  .info-bubble-text{align-items:center;text-align:center}
+}
+
+/* ============================================================
+   ITINERARY CARD
+   ============================================================ */
+#itinCard{
+  width:100%;max-width:1000px;height:340px;margin:0 auto;padding:18px 22px;
+  border:1px solid var(--border);
+  border-radius:var(--tune-radius);
+  backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  -webkit-backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  display:flex;flex-direction:column;min-height:0;
+  transition:background .7s ease,border-color .7s ease,box-shadow .7s ease;
+}
+.itin-row #itinCard{max-width:none;margin:0;flex:1;min-width:0}
+
+.itin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;flex-shrink:0}
+.itin-title{margin:0;font-size:19px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:normal}
+.itin-place{margin:3px 0 0;font-size:13px;color:var(--muted)}
+
+.itin-days{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;flex-shrink:0}
+.itin-day{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid var(--border);background:rgba(255,255,255,.07);
+  color:var(--muted);padding:8px 13px;border-radius:999px;
+  font:inherit;font-size:13px;cursor:pointer;transition:background .2s ease,color .2s ease;
+}
+.itin-day:hover{background:rgba(255,255,255,.13)}
+.itin-day[aria-selected="true"]{
+  color:#fff;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  border-color:rgba(255,255,255,.35);
+}
+.itin-day .itin-daydrop{opacity:.6;font-size:15px;line-height:1}
+.itin-day .itin-daydrop:hover{opacity:1}
+
+.itin-stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.itin-stop{
+  position:relative;
+  overflow:hidden;
+  flex-shrink:0;
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr) auto;
+  grid-template-rows:auto auto;
+  gap:1px 10px;align-items:center;
+  padding:9px 10px 9px 12px;
+  border:1px solid var(--border);
+  border-radius:calc(var(--tune-radius) * .55);
+  background:rgba(255,255,255,.05);
+  transition:border-color .25s ease;
+}
+/* Auto-placement puts the two-row actions column in the wrong track,
+   so every cell is pinned explicitly. Each also sits above the photo
+   layer, which is absolutely positioned and so sits outside the grid. */
+.itin-time{grid-area:1 / 1 / 2 / 2}
+.itin-name{grid-area:1 / 2 / 2 / 3}
+.itin-actions{grid-area:1 / 3 / 3 / 4}
+.itin-note{grid-area:2 / 1 / 3 / 3}
+.itin-time,.itin-name,.itin-actions,.itin-note{position:relative;z-index:1}
+/* The tourist-place background photo for a stop, faded in once it loads.
+   A gradient darkens it so the inputs on top stay legible regardless of
+   how bright the photo is. */
+.itin-stop-photo{
+  position:absolute;inset:0;z-index:0;
+  background-size:cover;background-position:center;
+  opacity:0;transition:opacity .4s ease;
+}
+.itin-stop-photo.is-loaded{opacity:1}
+.itin-stop-photo::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,rgba(10,12,10,.62) 0%,rgba(10,12,10,.5) 45%,rgba(10,12,10,.72) 100%);
+}
+.itin-stop.has-photo{border-color:rgba(255,255,255,.22)}
+.itin-stop.has-photo input{color:#fff;background:rgba(10,12,10,.34)}
+.itin-stop.has-photo input:hover{background:rgba(10,12,10,.46)}
+.itin-stop.has-photo input:focus{background:rgba(10,12,10,.5)}
+.itin-stop.has-photo input::placeholder{color:rgba(255,255,255,.7)}
+.itin-stop.has-photo .itin-time,
+.itin-stop.has-photo .itin-note{color:rgba(255,255,255,.86) !important}
+.itin-stop.has-photo .itin-icon{color:rgba(255,255,255,.85)}
+.itin-stop.has-photo .itin-icon:hover:not(:disabled){background:rgba(255,255,255,.22);color:#fff}
+.itin-stop input{
+  border:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;
+  padding:5px 7px;border-radius:8px;min-width:0;width:100%;
+  transition:background .2s ease,color .2s ease;
+}
+.itin-stop input:hover{background:rgba(255,255,255,.07)}
+.itin-stop input:focus{outline:2px solid var(--theme-c);outline-offset:0;background:rgba(255,255,255,.1)}
+.itin-stop input::placeholder{color:var(--muted);opacity:.7}
+.itin-time{font-variant-numeric:tabular-nums;color:var(--muted) !important}
+.itin-note{font-size:12.5px !important;color:var(--muted) !important}
+.itin-actions{display:flex;gap:3px;align-items:center}
+.itin-icon{
+  width:28px;height:28px;border-radius:50%;
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  font:inherit;font-size:14px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;transition:background .15s ease,color .15s ease;
+}
+.itin-icon:hover:not(:disabled){background:rgba(255,255,255,.14);color:var(--ink)}
+.itin-icon:disabled{opacity:.25;cursor:default}
+.itin-icon:focus-visible,.itin-day:focus-visible{outline:2px solid var(--theme-c);outline-offset:2px}
+
+.itin-empty{margin:4px 2px;font-size:13px;color:var(--muted)}
+.itin-foot{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;flex-shrink:0}
+.itin-btn{
+  border:1px solid rgba(255,255,255,.35);border-radius:999px;
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  color:#fff;font:inherit;font-size:13px;font-weight:600;
+  padding:9px 17px;cursor:pointer;
+}
+.itin-ghost{
+  border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.06);
+  color:var(--muted);font:inherit;font-size:13px;padding:9px 15px;cursor:pointer;
+}
+.itin-ghost:hover{background:rgba(255,255,255,.13);color:var(--ink)}
+.itin-count{margin-left:auto;font-size:12px;color:var(--muted)}
+.itin-btn:focus-visible,.itin-ghost:focus-visible{outline:2px solid var(--theme-c);outline-offset:3px}
+
+@media(max-width:560px){
+  /* Two columns, three rows: time and name share the top row, the note
+     gets a full row of its own, and the buttons sit right-aligned below. */
+  .itin-stop{grid-template-columns:72px minmax(0,1fr);grid-template-rows:auto auto auto;gap:2px 8px}
+  .itin-name{grid-area:1 / 2 / 2 / 3}
+  .itin-note{grid-area:2 / 1 / 3 / 3}
+  .itin-actions{grid-area:3 / 1 / 4 / 3;justify-content:flex-end}
+  .itin-head{flex-direction:column}
+  .itin-count{margin-left:0;width:100%}
+}
+
+/* ============================================================
+   LOADING SCREEN
+   Shown until the page is ready, then dissolved. Held for a
+   minimum beat so it reads as a reveal rather than a flicker,
+   and capped so slow map tiles can never trap the page behind it.
+   ============================================================ */
+body.is-booting{overflow:hidden}
+body.is-booting #travelDnaChatButton,
+body.is-booting #travelDnaChat,
+body.is-booting #travelDnaCameraButton,
+body.is-booting #travelDnaCamera{opacity:0;visibility:hidden;pointer-events:none}
+#boot{
+  position:fixed;inset:0;z-index:200;
+  display:grid;place-content:center;justify-items:center;gap:17px;
+  background:var(--bg);
+  transition:opacity .55s ease,visibility .55s;
+}
+#boot::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse 62% 46% at 50% 50%,rgba(255,255,255,.07),transparent 62%);
+}
+#boot.is-done{opacity:0;visibility:hidden;pointer-events:none}
+
+.boot-word{
+  position:relative;
+  font-family:var(--heading-font);
+  font-size:clamp(27px,4.4vw,40px);
+  letter-spacing:.2em;text-indent:.2em;
+  color:var(--ink);
+  opacity:0;transform:translateY(7px);
+  animation:bootRise .85s .1s cubic-bezier(.2,.8,.2,1) forwards;
+}
+.boot-rule{
+  position:relative;width:min(260px,56vw);height:1px;overflow:hidden;
+  background:var(--border);
+  transform:scaleX(0);
+  animation:bootRule .8s .28s cubic-bezier(.2,.8,.2,1) forwards;
+}
+/* A light travelling the rule — the one moving part. */
+.boot-rule::after{
+  content:"";position:absolute;top:-1px;left:0;width:38%;height:3px;border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--theme-c),transparent);
+  animation:bootSweep 1.5s .85s cubic-bezier(.45,0,.55,1) infinite;
+}
+.boot-sub{
+  position:relative;font-size:12px;letter-spacing:.13em;color:var(--muted);
+  opacity:0;animation:bootRise .85s .48s cubic-bezier(.2,.8,.2,1) forwards;
+}
+@keyframes bootRise{to{opacity:1;transform:none}}
+@keyframes bootRule{to{transform:scaleX(1)}}
+@keyframes bootSweep{from{transform:translateX(-115%)}to{transform:translateX(375%)}}
+
+@media (prefers-reduced-motion: reduce){
+  #boot *{animation:none !important;opacity:1 !important;transform:none !important}
+}
+
+/* ============================================================
+   TOP ROW — search on the left, tuning on the right
+   ============================================================ */
+.top-row{
+  width:100%;max-width:1000px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:18px;
+  align-items:stretch;
+}
+.top-row #sharedSearchBlock{
+  max-width:none;align-items:stretch;justify-content:flex-start;
+  gap:16px;padding:26px 24px;
+}
+.top-row #sharedSearchBlock h1{font-size:21px;line-height:1.25;margin-bottom:2px}
+.top-row #sharedSearchBlock .search-hint{
+  font-size:12px;line-height:1.5;color:var(--muted);margin:-8px 0 0;
+}
+.top-row #sharedSearchBlock .search-form{max-width:none}
+.top-row #sharedSearchBlock .search-input{padding:13px 16px;font-size:15px}
+.top-row #sharedSearchBlock .search-form button{padding:13px 22px}
+/* Pin the instance picker to the bottom so a taller box distributes its
+   space across the panel rather than leaving a gap under the controls. */
+.top-row #instanceRow{
+  max-width:none;margin-top:auto;padding-top:14px;
+  border-top:1px solid var(--border);
+}
+.top-row .tune-box{max-width:none;width:100%}
+
+/* ============================================================
+   TUNING BOX — four sliders, one label each
+   ============================================================ */
+.tune-box{
+  width:100%;max-width:330px;padding:16px 18px 14px;
+  border:1px solid var(--border);
+  backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  -webkit-backdrop-filter:blur(var(--tune-blur)) saturate(120%);
+  display:flex;flex-direction:column;gap:11px;
+  transition:background .7s ease,border-color .7s ease,box-shadow .7s ease;
+}
+.tune-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.tune-head b{font-size:13px;font-weight:600;color:var(--ink)}
+.tune-reset{
+  border:0;background:transparent;padding:0;cursor:pointer;
+  font:inherit;font-size:11px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;
+}
+.tune-reset:hover{color:var(--ink)}
+.tune-row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+.tune-row .tune-name{font-size:12px;color:var(--muted)}
+.tune-row .tune-val{font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;opacity:.8}
+.tune-slider{grid-column:1 / -1;width:100%;height:4px;margin:3px 0 0;-webkit-appearance:none;appearance:none;
+  background:linear-gradient(90deg,var(--theme-c,#fff),rgba(255,255,255,.18));outline:0;cursor:pointer}
+.tune-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--theme-c,#fff);border:2px solid rgba(255,255,255,.75);
+  box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;
+}
+.tune-slider::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;background:var(--theme-c,#fff);
+  border:2px solid rgba(255,255,255,.75);box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;
+}
+.tune-slider:focus-visible{outline:2px solid var(--theme-c,#fff);outline-offset:4px}
+.theme-btn:focus-visible,.search-form button:focus-visible,.tune-reset:focus-visible{outline:2px solid var(--theme-c,#fff);outline-offset:3px}
+
+@media (prefers-reduced-motion: reduce){
+  *,body,#themeStage .stage-layer{transition-duration:.01ms !important}
+}
+
+@media(max-width:900px){
+  .top-row{grid-template-columns:1fr}
+}
+
+@media(max-width:640px){
+  body{padding:14px;gap:18px}.controls-block{padding:16px}.search-form{flex-direction:column}
+  .search-form button{width:100%}.theme-btn{flex:1 1 28%;min-width:100px}
+  .tune-box{max-width:100%}
+}
+/* ---------- Travel DNA chatbot (add-on only) ---------- */
+#travelDnaChatButton{
+  position:fixed;right:24px;bottom:24px;z-index:100;
+  transition:transform .2s ease,box-shadow .2s ease,opacity .3s ease,visibility .3s;
+  width:58px;height:58px;border:1px solid var(--border);border-radius:50%;
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  color:#fff;font-size:24px;cursor:pointer;
+  box-shadow:0 12px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.25);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+#travelDnaChatButton:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.25)}
+#travelDnaChat{
+  position:fixed;right:24px;bottom:94px;z-index:101;
+  width:min(380px,calc(100vw - 28px));height:520px;
+  display:none;flex-direction:column;overflow:hidden;
+  border:1px solid var(--border);border-radius:22px;
+  background:rgba(10,25,22,.88);color:var(--ink);
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
+  box-shadow:0 24px 70px rgba(0,0,0,.36);
+}
+#travelDnaChat.open{display:flex;animation:travelDnaChatIn .2s ease}
+@keyframes travelDnaChatIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.travel-dna-chat-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
+}
+.travel-dna-chat-title{display:flex;align-items:center;gap:10px}
+.travel-dna-chat-avatar{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  color:#fff;font-size:19px;
+}
+.travel-dna-chat-title strong{display:block;font-size:14px;color:var(--ink)}
+.travel-dna-chat-title small{display:block;margin-top:2px;font-size:11px;color:var(--muted)}
+#travelDnaChatClose{
+  border:0;background:transparent;color:var(--muted);font-size:22px;
+  cursor:pointer;width:32px;height:32px;border-radius:50%;
+}
+#travelDnaChatClose:hover{background:rgba(255,255,255,.1);color:var(--ink)}
+#travelDnaChatMessages{
+  flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;
+}
+.travel-dna-msg{
+  max-width:86%;padding:10px 12px;border-radius:15px;
+  font-size:13px;line-height:1.5;white-space:pre-wrap;
+}
+.travel-dna-msg.bot{
+  align-self:flex-start;background:rgba(255,255,255,.09);
+  border:1px solid var(--border);color:var(--ink);border-bottom-left-radius:5px;
+}
+.travel-dna-msg.user{
+  align-self:flex-end;background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  color:#fff;border-bottom-right-radius:5px;
+}
+.travel-dna-quick{
+  display:flex;gap:7px;flex-wrap:wrap;padding:0 14px 10px;
+}
+.travel-dna-quick button{
+  border:1px solid var(--border);border-radius:999px;
+  background:rgba(255,255,255,.07);color:var(--ink);
+  padding:7px 10px;font:inherit;font-size:11px;cursor:pointer;
+}
+.travel-dna-quick button:hover{background:rgba(255,255,255,.14)}
+.travel-dna-chat-form{
+  display:flex;gap:7px;padding:11px;border-top:1px solid var(--border);
+}
+#travelDnaChatInput{
+  min-width:0;flex:1;padding:10px 12px;border:1px solid var(--border);
+  border-radius:999px;background:rgba(255,255,255,.08);
+  color:var(--ink);font:inherit;font-size:13px;
+}
+#travelDnaChatInput::placeholder{color:var(--muted)}
+#travelDnaChatInput:focus{outline:2px solid var(--theme-c);outline-offset:1px}
+#travelDnaChatSend{
+  width:40px;height:40px;border:0;border-radius:50%;
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+  color:#fff;cursor:pointer;font-size:16px;
+}
+
+/* ---------- Camera snapshot (floating, beside the chat button) ---------- */
+#travelDnaCameraButton{
+  position:fixed;right:92px;bottom:24px;z-index:100;
+  width:58px;height:58px;border:1px solid var(--border);border-radius:50%;
+  background:linear-gradient(135deg,var(--theme-b),var(--theme-a));
+  color:#fff;font-size:23px;cursor:pointer;
+  box-shadow:0 12px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.25);
+  transition:transform .2s ease,box-shadow .2s ease,opacity .3s ease,visibility .3s;
+}
+#travelDnaCameraButton:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.25)}
+#travelDnaCamera{
+  position:fixed;inset:0;z-index:150;display:none;
+  place-items:center;padding:18px;
+  background:rgba(8,12,11,.82);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+#travelDnaCamera.open{display:grid}
+.cam-shell{
+  width:min(460px,100%);display:flex;flex-direction:column;gap:12px;
+  padding:16px;border:1px solid var(--border);border-radius:22px;
+  background:rgba(10,25,22,.9);box-shadow:0 24px 70px rgba(0,0,0,.4);
+}
+.cam-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cam-head strong{font-size:14px;color:var(--ink)}
+#travelDnaCameraClose{
+  border:0;background:transparent;color:var(--muted);font-size:22px;
+  cursor:pointer;width:32px;height:32px;border-radius:50%;
+}
+#travelDnaCameraClose:hover{background:rgba(255,255,255,.1);color:var(--ink)}
+.cam-stage{
+  position:relative;width:100%;aspect-ratio:3/4;overflow:hidden;
+  border-radius:16px;background:#000;display:grid;place-items:center;
+}
+.cam-stage video,.cam-stage canvas{width:100%;height:100%;object-fit:cover;display:block}
+.cam-stage canvas{display:none}
+.cam-stage.has-shot video{display:none}
+.cam-stage.has-shot canvas{display:block}
+.cam-note{font-size:12px;line-height:1.5;color:var(--muted);margin:0}
+.cam-note.error{color:#ffb4a8}
+.cam-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cam-actions button,.cam-actions label{
+  flex:1 1 auto;min-width:96px;text-align:center;
+  border:1px solid var(--border);border-radius:999px;
+  padding:10px 14px;font:inherit;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;
+}
+.cam-actions button.primary{
+  border-color:transparent;color:#fff;
+  background:linear-gradient(135deg,var(--theme-a),var(--theme-b));
+}
+.cam-actions button[hidden]{display:none}
+.cam-actions button:disabled{opacity:.45;cursor:not-allowed}
+#travelDnaCameraFile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+@media(max-width:560px){
+  #travelDnaCameraButton{right:83px;bottom:15px}
+}
+
+@media(max-width:560px){
+  #travelDnaChatButton{right:15px;bottom:15px}
+  #travelDnaChat{right:14px;bottom:84px;height:min(520px,calc(100vh - 105px))}
+}
+
+
